@@ -473,6 +473,45 @@ var SPRITE_MAP = {
   "Аура-слайм":       {file: "slime_aura.png",  fileHurt: "slime_aura_hurt.png",  scale: 1.6},
   "Трещина-слайм":    {file: "slime_cracked.png",fileHurt:"slime_cracked_hurt.png",scale: 1.6}
 };
+/* ===== ФОНЫ ===== */
+var BG_MAP = {
+  0: "bg_forest.png",
+  1: "bg_sunset.png",
+  2: "bg_night.png",
+  3: "bg_autumn.png",
+  4: "bg_ice.png"
+};
+var BG_CACHE = {};
+
+function preloadBackgrounds(){
+  for (var idx in BG_MAP){
+    (function(i){
+      var f = BG_MAP[i];
+      var img = new Image();
+      img.onload = function(){
+        BG_CACHE[i] = img;
+        console.log("[Фон загружен] " + f);
+      };
+      img.onerror = function(){
+        console.warn("[Фон не найден] " + f + " — рисую кодом");
+      };
+      img.src = f;
+    })(idx);
+  }
+}
+
+function drawBgImage(themeIdx){
+  var img = BG_CACHE[themeIdx];
+  if (!img) return false;
+  var imgW = img.naturalWidth, imgH = img.naturalHeight;
+  var scale = Math.max(W / imgW, H / imgH);
+  var drawW = imgW * scale;
+  var drawH = imgH * scale;
+  var drawX = (W - drawW) / 2;
+  var drawY = H - drawH; // низ прижат к низу экрана
+  ctx.drawImage(img, drawX, drawY, drawW, drawH);
+  return true;
+}
 function removeCheckerBg(img){
   try {
     var w = img.naturalWidth, h = img.naturalHeight;
@@ -1471,7 +1510,11 @@ function drawThemeBanner(){if(G.themeBanner<=0)return;var a=Math.min(1,G.themeBa
 function render(){ctx.setTransform(DPR,0,0,DPR,0,0);var theme=getTheme();
   ctx.fillStyle=theme.sky[0];ctx.fillRect(0,0,W,H);ctx.save();
   if(G.shake>0.3){var a=Math.random()*Math.PI*2;ctx.translate(Math.cos(a)*G.shake,Math.sin(a)*G.shake);}
-  drawSky();drawMountains();drawGround();drawFog();drawAmbient();
+  var themeBgIdx = Math.min(THEMES.length-1, Math.floor((G.section-1)/2));
+  if (!drawBgImage(themeBgIdx)){
+    drawSky(); drawMountains(); drawGround();
+  }
+  drawFog(); drawAmbient();
   if(G.enemy){var pos=enemyPos(G.enemy);
     if(!G.enemy.dead||G.enemy.deadT>0){if(G.enemy.dead)ctx.globalAlpha=Math.max(0,G.enemy.deadT/0.65);
       drawSlime(G.enemy,pos);ctx.globalAlpha=1;}
@@ -2086,7 +2129,7 @@ for(var ps=0;ps<petSlots.length;ps++){petSlots[ps].addEventListener("click",func
 window.addEventListener("keydown",function(e){
   if(e.key===" "||e.key==="Enter"){e.preventDefault();if(G.screen==="start")startGame();}
   if(e.key==="u"||e.key==="U"||e.key==="г"||e.key==="Г"){if(G.screen==="playing")fireUltimate();}});
-resize();initStars();initAmbient();preloadSprites();
+resize();initStars();initAmbient();preloadSprites();preloadBackgrounds();
 (function boot(){var saved=loadProgress();
   G.gold=saved.gold;G.level=saved.level;G.ultLevel=saved.ultLevel;G.ultCharge=saved.ultCharge;
   G.prestige=saved.prestige;G.prestigeBonus=saved.prestigeBonus;G.eggs=saved.eggs;
