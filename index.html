@@ -1036,7 +1036,7 @@ function spawnEnemy(){if(G.battle===1){G.sectionRolls={mini:false,xl:false};}
     sz:(data.sz||1)*sizeMul,variant:variant,shape:data.shape||"round"};
   G.killFlash=0;G.playerAtkTimer=0.6;G.enemyAtkTimer=0.9;if(isBoss)G.runStats.bossDamaged=false;}
 function horizonY(){return H*0.42;}
-function groundY(){return H*0.76;}
+function groundY(){return H*0.72;}
 function enemyPos(e){var base=Math.min(W,H)*0.30*e.sz;var cy=groundY()-base*0.52;var lunge=e.lungeT||0;
   return{x:CX,y:cy+lunge*55,size:base,scale:base/60,lungeScale:1+lunge*0.20};}
 function addParticles(x,y,n,cols,sp,life,size){for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2;var s=sp*(0.3+Math.random()*0.9);
@@ -1240,15 +1240,14 @@ function drawSpriteSlime(e, pos, sprite){
 
   // 1. Тень под слаймом
   ctx.save();
-  var shR = r * 2.2;
-  var shGrad = ctx.createRadialGradient(pos.x, pos.y + r*0.45, 0, pos.x, pos.y + r*0.45, shR);
-  shGrad.addColorStop(0, "rgba(5,15,0,"+(0.5*grow)+")");
-  shGrad.addColorStop(0.35, "rgba(8,18,2,"+(0.3*grow)+")");
-  shGrad.addColorStop(0.7, "rgba(10,20,3,"+(0.12*grow)+")");
-  shGrad.addColorStop(1, "rgba(10,20,3,0)");
+  var shR = r * 1.6;
+  var shGrad = ctx.createRadialGradient(pos.x, pos.y + r*0.55, 0, pos.x, pos.y + r*0.55, shR);
+  shGrad.addColorStop(0, "rgba(0,0,0,"+(0.55*grow)+")");
+  shGrad.addColorStop(0.4, "rgba(0,0,0,"+(0.3*grow)+")");
+  shGrad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shGrad;
   ctx.beginPath();
-  ctx.ellipse(pos.x, pos.y + r*0.45, shR, shR*0.32, 0, 0, Math.PI*2);
+  ctx.ellipse(pos.x, pos.y + r*0.55, shR, shR*0.35, 0, 0, Math.PI*2);
   ctx.fill();
   ctx.restore();
 
