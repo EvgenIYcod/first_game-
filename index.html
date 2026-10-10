@@ -464,14 +464,14 @@ function shadeHex(hex,amt){var c=hexRgb(hex);
 /* ===== СПРАЙТЫ (загрузка PNG) ===== */
 var SPRITE_CACHE = {}; // { "file.png": {img: Image, loaded: true} }
 var SPRITE_MAP = {
-  "КОРОЛЬ СЛАЙМОВ": {file: "boss_king.png", scale: 1.7},
-  "ЛЕДЯНОЙ КОРОЛЬ": {file: "boss_ice.png",  scale: 1.7},
-  "ОГНЕННЫЙ КОРОЛЬ": {file: "boss_fire.png", scale: 1.7},
-  "Розовый слайм":  {file: "slime_pink.png",    scale: 1.6},
-  "Шипастый слайм": {file: "slime_spiky.png",   scale: 1.6},
-  "Пузырчатый слайм": {file: "slime_bubbly.png", scale: 1.6},
-  "Аура-слайм":     {file: "slime_aura.png",    scale: 1.6},
-  "Трещина-слайм":  {file: "slime_cracked.png", scale: 1.6}
+  "КОРОЛЬ СЛАЙМОВ":   {file: "boss_king.png",   fileHurt: "boss_king_hurt.png",   scale: 1.7},
+  "ЛЕДЯНОЙ КОРОЛЬ":   {file: "boss_ice.png",    fileHurt: "boss_ice_hurt.png",    scale: 1.7},
+  "ОГНЕННЫЙ КОРОЛЬ":  {file: "boss_fire.png",   fileHurt: "boss_fire_hurt.png",   scale: 1.7},
+  "Розовый слайм":    {file: "slime_pink.png",  fileHurt: "slime_pink_hurt.png",  scale: 1.6},
+  "Шипастый слайм":   {file: "slime_spiky.png", fileHurt: "slime_spiky_hurt.png", scale: 1.6},
+  "Пузырчатый слайм": {file: "slime_bubbly.png",fileHurt: "slime_bubbly_hurt.png",scale: 1.6},
+  "Аура-слайм":       {file: "slime_aura.png",  fileHurt: "slime_aura_hurt.png",  scale: 1.6},
+  "Трещина-слайм":    {file: "slime_cracked.png",fileHurt:"slime_cracked_hurt.png",scale: 1.6}
 };
 function removeCheckerBg(img){
   try {
@@ -533,31 +533,39 @@ function removeCheckerBg(img){
     return img;
   }
 }
+function loadOneSprite(f, loadedList){
+  if (loadedList.indexOf(f) !== -1) return;
+  loadedList.push(f);
+  var img = new Image();
+  img.onload = function(){
+    var clean = removeCheckerBg(img);
+    SPRITE_CACHE[f] = {img: clean, loaded: true};
+    console.log("[Спрайт загружен] " + f);
+  };
+  img.onerror = function(){
+    console.warn("[Спрайт не найден] sprites/" + f);
+  };
+  img.src = "sprites/" + f;
+}
 function preloadSprites(){
   var loaded = [];
   for (var key in SPRITE_MAP){
-    var file = SPRITE_MAP[key].file;
-    if (loaded.indexOf(file) !== -1) continue;
-    loaded.push(file);
-    (function(f){
-      var img = new Image();
-      img.onload = function(){
-        var clean = removeCheckerBg(img);
-        SPRITE_CACHE[f] = {img: clean, loaded: true};
-        console.log("[Спрайт загружен + фон убран] " + f);
-      };
-      img.onerror = function(){
-        console.warn("[Спрайт не найден] sprites/" + f + " — будет нарисован кодом");
-      };
-      img.src = "sprites/" + f;
-    })(file);
+    var entry = SPRITE_MAP[key];
+    if (entry.file) loadOneSprite(entry.file, loaded);
+    if (entry.fileHurt) loadOneSprite(entry.fileHurt, loaded);
   }
 }
 function getSpriteForEnemy(e){
   if (!e || !e.name) return null;
   var entry = SPRITE_MAP[e.name];
   if (!entry) return null;
-  var cached = SPRITE_CACHE[entry.file];
+  var file = entry.file;
+  // Если враг получил удар и есть hurt-версия — используем её
+  if (e.hitFlash > 0.45 && entry.fileHurt){
+    var hurtCached = SPRITE_CACHE[entry.fileHurt];
+    if (hurtCached && hurtCached.loaded) file = entry.fileHurt;
+  }
+  var cached = SPRITE_CACHE[file];
   if (!cached || !cached.loaded) return null;
   return {img: cached.img, scale: entry.scale};
 }
@@ -1023,11 +1031,11 @@ function initStars(){G.stars=[];for(var i=0;i<90;i++){G.stars.push({x:Math.rando
 function playerAttack(){var e=G.enemy;if(!e||e.dead)return;G.playerSwingT=0.28;var s=calcStats();
   var rageMul=G.buffs.rage>0?1.5:1;var crit=Math.random()*100<s.crit;var dmg=s.attack*rageMul;
   if(crit){dmg=dmg*s.critMult/100;G.runStats.crits=(G.runStats.crits||0)+1;PERSIST.totalCrits=(PERSIST.totalCrits||0)+1;}
-  dmg=Math.round(dmg*(0.9+Math.random()*0.2));e.hp-=dmg;e.hitFlash=1;e.squash=1.15;
-  G.runStats.damageDealt+=dmg;G.shake=Math.min(G.shake+(crit?16:6),22);var pos=enemyPos(e);
+  dmg=Math.round(dmg*(0.9+Math.random()*0.2));e.hp-=dmg;e.hitFlash=1;e.squash=1.1;
+  G.runStats.damageDealt+=dmg;G.shake=Math.min(G.shake+(crit?6:2),10);var pos=enemyPos(e);
   addDmg(pos.x+(Math.random()-0.5)*40,pos.y-pos.size*0.5,(crit?"КРИТ ":"")+dmg,crit?"#ffe680":"#fff",crit);
-  addParticles(pos.x,pos.y,crit?20:10,[e.col,e.col2||e.col,"#ffffff"],crit?380:240,0.6,crit?8:5);
-  addSparks(pos.x,pos.y,crit?14:6,["#fff8c8","#ffd54a","#ffffff"],crit?480:320,crit?0.5:0.35);
+  addParticles(pos.x,pos.y,crit?6:3,[e.col,e.col2||e.col,"#ffffff"],crit?200:130,0.5,crit?4:3);
+  addSparks(pos.x,pos.y,crit?5:3,["#fff8c8","#ffd54a","#ffffff"],crit?260:180,0.4,0.25);
   if(crit)addShockwave(pos.x,pos.y,e.col,1.2);
   if(e.hp<=0)killEnemy();else checkAchievements();}
 function enemyAttack(){var e=G.enemy;if(!e||e.dead)return;
@@ -1039,9 +1047,9 @@ function enemyAttack(){var e=G.enemy;if(!e||e.dead)return;
   if(G.enemy&&G.enemy.isBoss)G.runStats.bossDamaged=true;updateHud();
   if(G.hp<=0){G.hp=0;playerDied();}}
 function killEnemy(){var e=G.enemy;if(!e||e.dead)return;e.dead=true;e.deadT=0.65;var pos=enemyPos(e);
-  addParticles(pos.x,pos.y,e.isBoss?80:32,[e.col,e.col2||e.col,e.dark||e.col,"#ffffff"],e.isBoss?520:340,e.isBoss?1.3:0.9,e.isBoss?12:8);
-  addSparks(pos.x,pos.y,e.isBoss?30:12,["#fff8c8","#ffffff","#ffe680"],400,0.7);addShockwave(pos.x,pos.y,e.col,e.isBoss?2.0:1.0);
-  G.shake=Math.min(G.shake+(e.isBoss?26:10),32);G.killFlash=e.isBoss?1:0.5;
+  addParticles(pos.x,pos.y,e.isBoss?30:14,[e.col,e.col2||e.col,e.dark||e.col,"#ffffff"],e.isBoss?260:170,e.isBoss?1.0:0.7,e.isBoss?6:4);
+  addSparks(pos.x,pos.y,e.isBoss?12:6,["#fff8c8","#ffffff","#ffe680"],220,0.5);
+  G.shake=Math.min(G.shake+(e.isBoss?12:6),16);G.killFlash=e.isBoss?0.5:0.25;
   if(e.isBoss&&!G.runStats.bossDamaged){G.runStats.noHitBoss=true;}
   var killed=e;setTimeout(function(){if(G.enemy===killed&&G.screen==="playing")onKill();},500);}
 function onKill(){var e=G.enemy;var goldGained=Math.round(e.gold*goldMul());G.gold+=goldGained;G.runStats.goldEarned+=goldGained;
@@ -1081,7 +1089,7 @@ function update(dt){for(var i=G.effects.length-1;i>=0;i--){var p=G.effects[i];p.
   var e=G.enemy;if(!e)return;
   if(e.spawnAnim<1){e.spawnAnim=Math.min(1,e.spawnAnim+dt*1.4);G.groundOff=(G.groundOff+dt*3.0)%1;}
   if(e.dead){e.deadT-=dt;return;}
-  if(e.hitFlash>0)e.hitFlash=Math.max(0,e.hitFlash-dt*4);
+  if(e.hitFlash>0)e.hitFlash=Math.max(0,e.hitFlash-dt*2.5);
   if(e.squash>0)e.squash=Math.max(0,e.squash-dt*5);
   if(e.lungeT>0)e.lungeT=Math.max(0,e.lungeT-dt*3);
   if(e.spawnAnim>=1&&!modalsOpen()){G.playerAtkTimer-=dt;G.enemyAtkTimer-=dt;var s=calcStats();
@@ -1228,10 +1236,10 @@ function drawSpriteSlime(e, pos, sprite){
   ctx.drawImage(img, -imgSize/2, -imgSize, imgSize, imgSize);
   ctx.restore();
 
-  // 4. Вспышка белая при ударе
-  if (flash > 0.05){
+  // 4. Лёгкая вспышка при ударе (ослаблено — чтобы hurt-спрайт было видно)
+  if (flash > 0.6){
     ctx.save();
-    ctx.globalAlpha = flash * 0.55;
+    ctx.globalAlpha = (flash - 0.6) * 0.6;
     ctx.globalCompositeOperation = "lighter";
     ctx.drawImage(img, pos.x - imgSize/2, pos.y + bob*r - imgSize, imgSize, imgSize);
     ctx.restore();
