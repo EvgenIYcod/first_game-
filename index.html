@@ -1576,7 +1576,9 @@ function drawArm(x, y, side, swing, hasW){
     return;
   }
   var armW = Math.min(W, H) * 0.36;
-  var armH = armW * (armImg.naturalHeight / armImg.naturalWidth);
+  var armNaturalW = armImg.naturalWidth || armImg.width;
+  var armNaturalH = armImg.naturalHeight || armImg.height;
+  var armH = armW * (armNaturalH / armNaturalW);
 
   var swap = G.armSwapT || 0;
   var swapScale = 1 + swap * 0.14;
