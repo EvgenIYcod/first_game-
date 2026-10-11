@@ -672,29 +672,6 @@ var ITEM_ICONS = {
   "Золотое кольцо":     "item_gold_ring.png",
   "Кольцо силы":        "item_power_ring.png"
 };
-var ICON_SHEET_CACHE = {};
-function preloadItemSheets(){
-  for (var k in ICON_SHEETS){
-    (function(key){
-      var sheet = ICON_SHEETS[key];
-      var img = new Image();
-      img.onload = function(){
-        ICON_SHEET_CACHE[sheet.file] = img;
-        ITEM_ICON_DATA = {};
-        console.log("[Лист иконок загружен] " + sheet.file);
-      };
-      img.onerror = function(){ console.warn("[Лист иконок не найден] sprites/icons/" + sheet.file); };
-      img.src = "sprites/icons/" + sheet.file;
-    })(k);
-  }
-}
-function drawSheetCell(g, img, cols, rows, idx, dx, dy, dw, dh){
-  var cw = img.naturalWidth / cols;
-  var ch = img.naturalHeight / rows;
-  var cx = (idx % cols) * cw;
-  var cy = Math.floor(idx / cols) * ch;
-  g.drawImage(img, cx, cy, cw, ch, dx, dy, dw, dh);
-}
 
 /* ===== ПИТОМЦЫ ===== */
 var PET_RARITY_NAMES=["ОБЫЧНЫЙ","РЕДКИЙ","ЭПИЧЕСКИЙ","ЛЕГЕНДАРНЫЙ"];
@@ -937,7 +914,6 @@ function fireUltimate(){if(G.screen!=="playing")return;if(!isUltUnlocked())retur
   var flash=el('ultFlash');if(flash){flash.classList.add('on');setTimeout(function(){flash.classList.remove('on');},180);}
   G.ultCharge=0;saveProgress();updateUltButton();updateHud();checkAchievements();if(e.hp<=0)killEnemy();}
 var ICON_CACHE={},PLACEHOLDER_CACHE={};
-var ITEM_ICON_DATA = {};
 function drawRoundRectG(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);
   g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
 function drawItemIcon(g,shape,c1,c2,tier){g.clearRect(0,0,64,64);g.save();g.translate(32,32);
@@ -974,36 +950,21 @@ function itemIcon(item, size){
 }
 function mountItemIcons(root){
   var container = root || document;
-  var els = container.querySelectorAll('canvas.item-icon');
+  var els = container.querySelectorAll('canvas.item-icon-fallback');
   for (var i=0;i<els.length;i++){
     var cv = els[i];
-    var sheetKey = cv.getAttribute("data-sheet");
-    var sheet = sheetKey ? ICON_SHEETS[sheetKey] : null;
-    var img = sheet ? ICON_SHEET_CACHE[sheet.file] : null;
-    var state = (img && sheet) ? "loaded" : "fallback";
-    // Перерисовываем только когда состояние изменилось (fallback → loaded)
-    if (cv.getAttribute("data-state") === state) continue;
-    cv.setAttribute("data-state", state);
-
+    if (cv.getAttribute("data-drawn") === "1") continue;
+    cv.setAttribute("data-drawn", "1");
     var g = cv.getContext("2d");
-    g.clearRect(0, 0, cv.width, cv.height);
-
-    if (img && sheet){
-      var idx = parseInt(cv.getAttribute("data-idx"), 10);
-      if (idx >= 0){
-        drawSheetCell(g, img, sheet.cols, sheet.rows, idx, 0, 0, cv.width, cv.height);
-      }
-    } else {
-      var sc = cv.width / 64;
-      g.save();
-      g.scale(sc, sc);
-      drawItemIcon(g,
-        cv.getAttribute("data-shape"),
-        cv.getAttribute("data-c1"),
-        cv.getAttribute("data-c2"),
-        parseInt(cv.getAttribute("data-tier"), 10) || 0);
-      g.restore();
-    }
+    var sc = cv.width / 64;
+    g.save();
+    g.scale(sc, sc);
+    drawItemIcon(g,
+      cv.getAttribute("data-shape")||"sword",
+      cv.getAttribute("data-c1")||"#888",
+      cv.getAttribute("data-c2")||"#444",
+      parseInt(cv.getAttribute("data-tier"), 10) || 0);
+    g.restore();
   }
 }
 function getSlotPlaceholder(slot){if(PLACEHOLDER_CACHE[slot])return PLACEHOLDER_CACHE[slot];
