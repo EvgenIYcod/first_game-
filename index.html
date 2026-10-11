@@ -52,6 +52,11 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none;touch-action:
 .petSlot.r0{border-color:#a8a8a8;} .petSlot.r1{border-color:#4a90d4;} .petSlot.r2{border-color:#9a4acc;}
 .petSlot.r3{border-color:#ffd050;} .petSlot.r4{border-color:#00e0c0;box-shadow:0 0 14px rgba(0,224,192,.9);}
 #bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:10;padding:0 10px 10px;pointer-events:none;width:100%;max-width:460px;}
+@media (max-width:700px){
+  #bottom{max-width:none;padding:0;left:0;transform:none;width:100%;}
+  #panel{border-radius:14px 14px 0 0;border-left:none;border-right:none;border-bottom:none;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));}
+}
 #panel{background:linear-gradient(180deg,#f0dbb0 0%,#d4b886 50%,#b89860 100%);border:4px solid #4a3016;
   border-radius:16px 16px 8px 8px;padding:9px;position:relative;pointer-events:auto;}
 #inv{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
